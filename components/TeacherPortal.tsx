@@ -10,9 +10,12 @@ interface TeacherPortalProps {
 }
 
 const INPUT_TABS = {
-  surah: { label: 'Hafalan Surah Pendek', category: 'Hafalan Surah Pendek', icon: BookIcon },
-  doa: { label: 'Hafalan Doa Sehari-hari', category: 'Hafalan Doa Sehari-hari', icon: PrayingHandsIcon },
-  hadist: { label: 'Hafalan Hadist', category: 'Hafalan Hadist', icon: QuoteIcon },
+  surah1: { label: 'Semester 1 - Surah Pendek', category: 'Hafalan Surah Pendek', icon: BookIcon, semester: 1 },
+  surah2: { label: 'Semester 2 - Surah Pendek', category: 'Hafalan Surah Pendek', icon: BookIcon, semester: 2 },
+  doa1: { label: 'Semester 1 - Doa Sehari-hari', category: 'Hafalan Doa Sehari-hari', icon: PrayingHandsIcon, semester: 1 },
+  doa2: { label: 'Semester 2 - Doa Sehari-hari', category: 'Hafalan Doa Sehari-hari', icon: PrayingHandsIcon, semester: 2 },
+  hadist1: { label: 'Semester 1 - Hadist', category: 'Hafalan Hadist', icon: QuoteIcon, semester: 1 },
+  hadist2: { label: 'Semester 2 - Hadist', category: 'Hafalan Hadist', icon: QuoteIcon, semester: 2 },
 } as const;
 
 type InputTabKey = keyof typeof INPUT_TABS;
@@ -43,7 +46,7 @@ const TeacherPortal: React.FC<TeacherPortalProps> = ({ onBack, teacher }) => {
   const [submitStatus, setSubmitStatus] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
   
   const [mainTab, setMainTab] = useState<'input' | 'report'>('input');
-  const [activeSubTab, setActiveSubTab] = useState<InputTabKey>('surah');
+  const [activeSubTab, setActiveSubTab] = useState<InputTabKey>('surah1');
 
   // Filter states for report
   const [selectedStudent, setSelectedStudent] = useState<string>('');
@@ -52,7 +55,7 @@ const TeacherPortal: React.FC<TeacherPortalProps> = ({ onBack, teacher }) => {
 
   const [formData, setFormData] = useState<Omit<Score, 'Timestamp'>>({
     'Student ID': '',
-    Category: INPUT_TABS.surah.category,
+    Category: INPUT_TABS.surah1.category,
     'Item Name': '',
     Score: '',
     Date: new Date().toISOString().split('T')[0],
@@ -125,7 +128,15 @@ const TeacherPortal: React.FC<TeacherPortalProps> = ({ onBack, teacher }) => {
   }, [mainTab, students]);
 
   const studentMap = useMemo(() => new Map(students.map(s => [s.NISN, s.Name])), [students]);
-  const filteredHafalanItems = useMemo(() => hafalanItems.filter(item => item.Category === INPUT_TABS[activeSubTab].category), [hafalanItems, activeSubTab]);
+  const filteredHafalanItems = useMemo(() => {
+    const tab = INPUT_TABS[activeSubTab];
+    return hafalanItems.filter(item => {
+      const categoryMatch = item.Category === tab.category;
+      // If tab has semester property, filter by semester, otherwise include all
+      const semesterMatch = 'semester' in tab ? item.Semester === tab.semester : true;
+      return categoryMatch && semesterMatch;
+    });
+  }, [hafalanItems, activeSubTab]);
 
   const filteredScores = useMemo(() => {
     let filtered = scores;
@@ -221,14 +232,14 @@ const TeacherPortal: React.FC<TeacherPortalProps> = ({ onBack, teacher }) => {
               <label htmlFor="Student ID" className="block text-sm font-medium text-gray-700">Siswa (Kelas {teacher.Class})</label>
               <select id="Student ID" name="Student ID" value={formData['Student ID']} onChange={handleChange} required className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm rounded-md">
                 <option value="">Pilih Siswa</option>
-                {students.map(student => <option key={student.NISN} value={student.NISN}>{student.Name} ({student.NISN})</option>)}
+                {students.map((student, index) => <option key={`${student.NISN}-${index}`} value={student.NISN}>{student.Name} ({student.NISN})</option>)}
               </select>
             </div>
             <div>
               <label htmlFor="Item Name" className="block text-sm font-medium text-gray-700">Nama Item Penilaian</label>
               <select id="Item Name" name="Item Name" value={formData['Item Name']} onChange={handleChange} required disabled={isLoadingHafalan || filteredHafalanItems.length === 0} className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm rounded-md disabled:bg-gray-100">
                 <option value="">{isLoadingHafalan ? 'Memuat item...' : 'Pilih Item'}</option>
-                {filteredHafalanItems.map(item => <option key={item.ItemName} value={item.ItemName}>{item.ItemName}</option>)}
+                {filteredHafalanItems.map(item => <option key={`${item.ItemName}-${item.Semester}`} value={item.ItemName}>{item.ItemName}</option>)}
               </select>
             </div>
           </div>

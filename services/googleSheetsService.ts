@@ -1,4 +1,6 @@
 import { Score } from '../types';
+import { defaultHafalanData } from '../data/hafalanDefaults';
+import hafalanData from '../data/hafalanSurahData.json';
 
 const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbzpg2KxrmSatA7Hs0iqAuyWj1nTlHQL60gFy0rdNh7WYPkvWHLY6S2W_Ypzffe0pYcb/exec';
 const TEACHER_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRbz8LUyBo51HkpA0O0_8srtlG-7RxWLvesNbnmC3shQB9qC6EbUzx3dvXp5lWnmk7BR3sGuERPWZbg/pub?gid=735271315&single=true&output=csv';
@@ -76,12 +78,7 @@ export const getSheetData = async <T,>(sheetName: string): Promise<T[]> => {
         const csvText = await response.text();
         return parseCSV<T>(csvText);
     } else if (sheetName === 'Hafalan') {
-        const response = await fetch(HAFALAN_CSV_URL);
-        if (!response.ok) {
-            throw new Error(`Error fetching Hafalan CSV data: ${response.statusText}`);
-        }
-        const csvText = await response.text();
-        return parseCSV<T>(csvText);
+        return hafalanData as T[];
     } else if (sheetName === 'Principal') {
         const response = await fetch(PRINCIPAL_CSV_URL);
         if (!response.ok) {

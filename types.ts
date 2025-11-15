@@ -28,4 +28,5 @@ export interface Score {
 export interface Hafalan {
   Category: 'Hafalan Surah Pendek' | 'Hafalan Doa Sehari-hari' | 'Hafalan Hadist';
   ItemName: string;
+  Semester?: number;
 }
