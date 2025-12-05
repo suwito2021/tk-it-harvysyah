@@ -2,7 +2,7 @@ import { Score } from '../types';
 import { defaultHafalanData } from '../data/hafalanDefaults';
 import hafalanData from '../data/hafalanSurahData.json';
 
-const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbzpg2KxrmSatA7Hs0iqAuyWj1nTlHQL60gFy0rdNh7WYPkvWHLY6S2W_Ypzffe0pYcb/exec';
+const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbwgV3K6IT_qN4oFXWzCi6QIP9UuIn1IqfRU4Z2xsX1ddZ4rbPUoEiiAds7MMChdPTax/exec';
 const TEACHER_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRbz8LUyBo51HkpA0O0_8srtlG-7RxWLvesNbnmC3shQB9qC6EbUzx3dvXp5lWnmk7BR3sGuERPWZbg/pub?gid=735271315&single=true&output=csv';
 const STUDENT_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRbz8LUyBo51HkpA0O0_8srtlG-7RxWLvesNbnmC3shQB9qC6EbUzx3dvXp5lWnmk7BR3sGuERPWZbg/pub?gid=1983478163&single=true&output=csv';
 const HAFALAN_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRbz8LUyBo51HkpA0O0_8srtlG-7RxWLvesNbnmC3shQB9qC6EbUzx3dvXp5lWnmk7BR3sGuERPWZbg/pub?gid=452521597&single=true&output=csv';
@@ -116,9 +116,7 @@ export const addScore = async (scoreData: Omit<Score, 'Timestamp'>): Promise<{su
     try {
         const response = await fetch(WEB_APP_URL, {
             method: 'POST',
-            // REMOVED: mode: 'no-cors' - This is the key change to allow reading the response.
             headers: {
-                // The Content-Type must be 'text/plain' for Google Apps Script to correctly parse e.postData.contents
                 'Content-Type': 'text/plain;charset=utf-8',
             },
             body: JSON.stringify({
@@ -131,7 +129,7 @@ export const addScore = async (scoreData: Omit<Score, 'Timestamp'>): Promise<{su
             throw new Error(`Server responded with an error: ${response.status} ${response.statusText}`);
         }
 
-        const result = await response.json(); // Now we can read the actual response from the server
+        const result = await response.json();
 
         if (result.success) {
             return { success: true, message: result.message || 'Penilaian berhasil dikirim!' };
@@ -141,7 +139,70 @@ export const addScore = async (scoreData: Omit<Score, 'Timestamp'>): Promise<{su
 
     } catch (error) {
         console.error('Failed to add score:', error);
-        // We throw the actual error message now, which will be more informative.
+        throw error;
+    }
+};
+
+export const updateScore = async (scoreData: { original: Score; updated: Score }): Promise<{success: boolean, message: string}> => {
+    try {
+        console.log('Sending update request with data:', scoreData);
+        const response = await fetch(WEB_APP_URL, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'text/plain;charset=utf-8',
+            },
+            body: JSON.stringify({
+                action: 'updateScore',
+                data: scoreData
+            }),
+        });
+
+        if (!response.ok) {
+            throw new Error(`Server responded with an error: ${response.status} ${response.statusText}`);
+        }
+
+        const result = await response.json();
+        console.log('Update response:', result);
+
+        if (result.success) {
+            return { success: true, message: result.message || 'Penilaian berhasil diperbarui!' };
+        } else {
+            throw new Error(result.message || 'Terjadi kesalahan di server, namun server tidak memberikan detail.');
+        }
+
+    } catch (error) {
+        console.error('Failed to update score:', error);
+        throw error;
+    }
+};
+
+export const deleteScore = async (scoreData: Score): Promise<{success: boolean, message: string}> => {
+    try {
+        const response = await fetch(WEB_APP_URL, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'text/plain;charset=utf-8',
+            },
+            body: JSON.stringify({
+                action: 'deleteScore',
+                data: scoreData
+            }),
+        });
+
+        if (!response.ok) {
+            throw new Error(`Server responded with an error: ${response.status} ${response.statusText}`);
+        }
+
+        const result = await response.json();
+
+        if (result.success) {
+            return { success: true, message: result.message || 'Penilaian berhasil dihapus!' };
+        } else {
+            throw new Error(result.message || 'Terjadi kesalahan di server, namun server tidak memberikan detail.');
+        }
+
+    } catch (error) {
+        console.error('Failed to delete score:', error);
         throw error;
     }
 };

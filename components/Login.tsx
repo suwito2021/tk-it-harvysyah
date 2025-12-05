@@ -88,13 +88,13 @@ const Login: React.FC<LoginProps> = ({ portalType, onBack, onLoginSuccess }) => 
             onChange={(e) => setInputValue(e.target.value)}
             placeholder={config.placeholder}
             required
-            className="w-full px-4 py-3 pr-12 bg-gray-700 text-white rounded-lg border-2 border-transparent focus:outline-none focus:border-emerald-500 placeholder-gray-400"
+            className="w-full px-4 py-3 pr-12 bg-white text-gray-900 rounded-lg border-2 border-gray-300 focus:outline-none focus:border-emerald-500 placeholder-gray-400"
             aria-label={config.placeholder}
           />
           <button
             type="button"
             onClick={() => setShowPassword(!showPassword)}
-            className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white"
+            className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
           >
             {showPassword ? <EyeOffIcon className="w-5 h-5" /> : <EyeIcon className="w-5 h-5" />}
           </button>

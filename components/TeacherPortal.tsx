@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { getSheetData, addScore } from '../services/googleSheetsService';
+import { getSheetData, addScore, updateScore, deleteScore } from '../services/googleSheetsService';
 import type { Student, Score, Teacher, Hafalan } from '../types';
-import { ChevronLeftIcon, BookIcon, PrayingHandsIcon, QuoteIcon, ChartBarIcon, NotYetDevelopedIcon, StartingToDevelopIcon, DevelopingAsExpectedIcon, VeryWellDevelopedIcon } from './icons';
+import { ChevronLeftIcon, BookIcon, PrayingHandsIcon, QuoteIcon, ChartBarIcon, NotYetDevelopedIcon, StartingToDevelopIcon, DevelopingAsExpectedIcon, VeryWellDevelopedIcon, PencilIcon, TrashIcon, SpinnerIcon } from './icons';
 
 interface TeacherPortalProps {
   onBack: () => void;
@@ -54,6 +54,16 @@ const TeacherPortal: React.FC<TeacherPortalProps> = ({ onBack, teacher }) => {
   const [endDate, setEndDate] = useState<string>('');
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
+
+  // Modal states
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [selectedScore, setSelectedScore] = useState<Score | null>(null);
+  const [originalScore, setOriginalScore] = useState<Score | null>(null);
+  const [isEditLoading, setIsEditLoading] = useState(false);
+  const [isDeleteLoading, setIsDeleteLoading] = useState(false);
+  const [editStatus, setEditStatus] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+  const [deleteStatus, setDeleteStatus] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
 
   const [formData, setFormData] = useState<Omit<Score, 'Timestamp'>>({
     'Student ID': '',
@@ -119,7 +129,7 @@ const TeacherPortal: React.FC<TeacherPortalProps> = ({ onBack, teacher }) => {
           const teacherScores = scoreData.filter(score => studentIds.has(score['Student ID']));
           setScores(teacherScores.sort((a, b) => new Date(b.Date).getTime() - new Date(a.Date).getTime()));
         } catch (err)
- {
+  {
           setError('Gagal memuat data laporan.');
         } finally {
           setIsLoadingScores(false);
@@ -128,6 +138,16 @@ const TeacherPortal: React.FC<TeacherPortalProps> = ({ onBack, teacher }) => {
       fetchScores();
     }
   }, [mainTab, students]);
+
+  // Auto-dismiss status messages after 5 seconds
+  useEffect(() => {
+    if (submitStatus) {
+      const timer = setTimeout(() => {
+        setSubmitStatus(null);
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [submitStatus]);
 
   const studentMap = useMemo(() => new Map(students.map(s => [s.NISN, s.Name])), [students]);
   const filteredHafalanItems = useMemo(() => {
@@ -281,11 +301,304 @@ const TeacherPortal: React.FC<TeacherPortalProps> = ({ onBack, teacher }) => {
             </button>
           </div>
         </form>
-        {submitStatus && <div className={`mt-4 p-4 rounded-md text-sm ${submitStatus.type === 'success' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>{submitStatus.message}</div>}
+        {submitStatus && (
+          <div className={`mt-6 p-4 rounded-xl shadow-lg border-l-4 animate-in slide-in-from-top-2 duration-300 ${
+            submitStatus.type === 'success'
+              ? 'bg-gradient-to-r from-green-50 to-emerald-50 border-green-500 text-green-800'
+              : 'bg-gradient-to-r from-red-50 to-pink-50 border-red-500 text-red-800'
+          }`}>
+            <div className="flex items-center">
+              <div className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center mr-3 ${
+                submitStatus.type === 'success' ? 'bg-green-100' : 'bg-red-100'
+              }`}>
+                {submitStatus.type === 'success' ? (
+                  <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
+                  </svg>
+                ) : (
+                  <svg className="w-5 h-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path>
+                  </svg>
+                )}
+              </div>
+              <div className="flex-1">
+                <p className="font-semibold text-sm">
+                  {submitStatus.type === 'success' ? 'Berhasil!' : 'Error!'}
+                </p>
+                <p className="text-sm opacity-90 mt-1">{submitStatus.message}</p>
+              </div>
+              <button
+                onClick={() => setSubmitStatus(null)}
+                className={`ml-4 p-1 rounded-full hover:bg-opacity-20 transition-colors ${
+                  submitStatus.type === 'success' ? 'hover:bg-green-200' : 'hover:bg-red-200'
+                }`}
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     );
   };
   
+  const handleEditClick = (score: Score) => {
+    setSelectedScore({...score}); // Create a copy for editing
+    setOriginalScore({...score}); // Keep original for identification
+    setEditStatus(null); // Clear any previous status
+    setIsEditModalOpen(true);
+  };
+
+  const handleDeleteClick = (score: Score) => {
+    setSelectedScore(score);
+    setDeleteStatus(null); // Clear any previous status
+    setIsDeleteModalOpen(true);
+  };
+
+  const handleEditSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedScore || !originalScore) return;
+
+    setIsEditLoading(true);
+    try {
+      const result = await updateScore({
+        original: originalScore,
+        updated: selectedScore
+      });
+
+      // Refresh the scores data
+      const scoreData = await getSheetData<Score>('score');
+      const studentIds = new Set(students.map(s => s.NISN));
+      const teacherScores = scoreData.filter(score => studentIds.has(score['Student ID']));
+      setScores(teacherScores.sort((a, b) => new Date(b.Date).getTime() - new Date(a.Date).getTime()));
+
+      // Close modal immediately and show success message
+      setIsEditModalOpen(false);
+      setSelectedScore(null);
+      setOriginalScore(null);
+      setSubmitStatus({ message: result.message, type: 'success' });
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Terjadi kesalahan yang tidak diketahui.';
+      // Close modal immediately and show error message
+      setIsEditModalOpen(false);
+      setSelectedScore(null);
+      setOriginalScore(null);
+      setSubmitStatus({ message: `Gagal memperbarui data: ${errorMessage}`, type: 'error' });
+    } finally {
+      setIsEditLoading(false);
+    }
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!selectedScore) return;
+
+    setIsDeleteLoading(true);
+    try {
+      const result = await deleteScore(selectedScore);
+
+      // Refresh the scores data
+      const scoreData = await getSheetData<Score>('score');
+      const studentIds = new Set(students.map(s => s.NISN));
+      const teacherScores = scoreData.filter(score => studentIds.has(score['Student ID']));
+      setScores(teacherScores.sort((a, b) => new Date(b.Date).getTime() - new Date(a.Date).getTime()));
+
+      // Close modal immediately and show success message
+      setIsDeleteModalOpen(false);
+      setSelectedScore(null);
+      setSubmitStatus({ message: result.message, type: 'success' });
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Terjadi kesalahan yang tidak diketahui.';
+      // Close modal immediately and show error message
+      setIsDeleteModalOpen(false);
+      setSelectedScore(null);
+      setSubmitStatus({ message: `Gagal menghapus data: ${errorMessage}`, type: 'error' });
+    } finally {
+      setIsDeleteLoading(false);
+    }
+  };
+
+  const renderEditModal = () => {
+    if (!isEditModalOpen || !selectedScore) return null;
+
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
+          <div className="p-4 md:p-6">
+            <h3 className="text-lg md:text-xl font-bold text-gray-800 mb-4 md:mb-6">Edit Penilaian</h3>
+            {editStatus && (
+              <div className={`mb-4 p-3 rounded-lg text-sm font-medium ${
+                editStatus.type === 'success'
+                  ? 'bg-green-100 text-green-800 border border-green-200'
+                  : 'bg-red-100 text-red-800 border border-red-200'
+              }`}>
+                {editStatus.message}
+              </div>
+            )}
+            <form onSubmit={handleEditSubmit} className="space-y-4 md:space-y-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Siswa</label>
+                <select
+                  value={selectedScore['Student ID']}
+                  onChange={(e) => setSelectedScore({...selectedScore, 'Student ID': e.target.value})}
+                  className="w-full border border-gray-300 rounded-lg shadow-sm py-2.5 px-3 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-sm md:text-base"
+                  required
+                >
+                  {students.map((student) => (
+                    <option key={student.NISN} value={student.NISN}>
+                      {student.Name} ({student.NISN})
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Kategori</label>
+                <select
+                  value={selectedScore.Category}
+                  onChange={(e) => setSelectedScore({...selectedScore, Category: e.target.value})}
+                  className="w-full border border-gray-300 rounded-lg shadow-sm py-2.5 px-3 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-sm md:text-base"
+                  required
+                >
+                  <option value="Hafalan Surah Pendek">Hafalan Surah Pendek</option>
+                  <option value="Hafalan Doa Sehari-hari">Hafalan Doa Sehari-hari</option>
+                  <option value="Hafalan Hadist">Hafalan Hadist</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Item Hafalan</label>
+                <input
+                  type="text"
+                  value={selectedScore['Item Name']}
+                  onChange={(e) => setSelectedScore({...selectedScore, 'Item Name': e.target.value})}
+                  className="w-full border border-gray-300 rounded-lg shadow-sm py-2.5 px-3 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-sm md:text-base"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-3">Penilaian</label>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-3">
+                  {SCORE_OPTIONS.map(option => {
+                    const scheme = colorSchemes[option.color as keyof typeof colorSchemes];
+                    const isSelected = selectedScore.Score === option.value;
+                    return (
+                      <button
+                        type="button"
+                        key={option.value}
+                        onClick={() => setSelectedScore({...selectedScore, Score: option.value})}
+                        className={`flex flex-col items-center justify-center text-center p-3 md:p-4 rounded-lg border-2 transition-all duration-200 focus:outline-none ${scheme.bg} ${scheme.text} ${isSelected ? `${scheme.selected} ring-2 ring-offset-1` : `${scheme.border} hover:shadow-md hover:-translate-y-0.5`}`}
+                      >
+                        <option.Icon className="w-5 h-5 md:w-6 md:h-6 mb-1 md:mb-2" />
+                        <span className="font-bold text-sm md:text-base">{option.value}</span>
+                        <span className="text-xs md:text-sm opacity-75">{option.label.split(' ')[0]}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Tanggal</label>
+                <input
+                  type="date"
+                  value={selectedScore.Date}
+                  onChange={(e) => setSelectedScore({...selectedScore, Date: e.target.value})}
+                  className="w-full border border-gray-300 rounded-lg shadow-sm py-2.5 px-3 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-sm md:text-base"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Catatan</label>
+                <textarea
+                  value={selectedScore.Notes || ''}
+                  onChange={(e) => setSelectedScore({...selectedScore, Notes: e.target.value})}
+                  rows={3}
+                  className="w-full border border-gray-300 rounded-lg shadow-sm py-2.5 px-3 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-sm md:text-base resize-none"
+                  placeholder="Tambahkan catatan jika diperlukan..."
+                />
+              </div>
+              <div className="flex flex-col-reverse sm:flex-row justify-end gap-3 pt-4 border-t">
+                <button
+                  type="button"
+                  onClick={() => setIsEditModalOpen(false)}
+                  disabled={isEditLoading}
+                  className="px-4 py-2.5 text-sm md:text-base bg-gray-500 text-white rounded-lg hover:bg-gray-600 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors duration-200 font-medium"
+                >
+                  Batal
+                </button>
+                <button
+                  type="submit"
+                  disabled={isEditLoading}
+                  className="px-4 py-2.5 text-sm md:text-base bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 disabled:bg-emerald-400 disabled:cursor-not-allowed transition-colors duration-200 font-medium flex items-center justify-center gap-2"
+                >
+                  {isEditLoading ? (
+                    <>
+                      <SpinnerIcon className="w-4 h-4" />
+                      Menyimpan...
+                    </>
+                  ) : (
+                    'Simpan Perubahan'
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  const renderDeleteModal = () => {
+    if (!isDeleteModalOpen || !selectedScore) return null;
+
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div className="bg-white rounded-2xl shadow-xl p-6 w-full max-w-sm mx-4">
+          <div className="text-center">
+            <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 mb-4">
+              <TrashIcon className="h-6 w-6 text-red-600" />
+            </div>
+            <h3 className="text-lg font-bold text-gray-800 mb-2">Hapus Penilaian</h3>
+            {deleteStatus && (
+              <div className={`mb-4 p-3 rounded-lg text-sm font-medium ${
+                deleteStatus.type === 'success'
+                  ? 'bg-green-100 text-green-800 border border-green-200'
+                  : 'bg-red-100 text-red-800 border border-red-200'
+              }`}>
+                {deleteStatus.message}
+              </div>
+            )}
+            <p className="text-gray-600 mb-6">
+              Apakah Anda yakin ingin menghapus penilaian ini? Tindakan ini tidak dapat dibatalkan.
+            </p>
+            <div className="flex justify-center space-x-3">
+              <button
+                onClick={() => setIsDeleteModalOpen(false)}
+                disabled={isDeleteLoading}
+                className="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors duration-200"
+              >
+                Batal
+              </button>
+              <button
+                onClick={handleDeleteConfirm}
+                disabled={isDeleteLoading}
+                className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 disabled:bg-red-400 disabled:cursor-not-allowed transition-colors duration-200 flex items-center justify-center gap-2"
+              >
+                {isDeleteLoading ? (
+                  <>
+                    <SpinnerIcon className="w-4 h-4" />
+                    Menghapus...
+                  </>
+                ) : (
+                  'Hapus'
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   const renderReport = () => {
     if (isLoadingScores) return <p className="text-center text-gray-500 py-8">Memuat data laporan...</p>;
     if (error && scores.length === 0) return <p className="text-center text-red-500 py-8">{error}</p>;
@@ -330,11 +643,12 @@ const TeacherPortal: React.FC<TeacherPortalProps> = ({ onBack, teacher }) => {
                 <th scope="col" className="px-4 py-3 text-left text-xs font-bold text-white uppercase tracking-wider">Rating</th>
                 <th scope="col" className="px-4 py-3 text-left text-xs font-bold text-white uppercase tracking-wider">Tanggal</th>
                 <th scope="col" className="px-4 py-3 text-left text-xs font-bold text-white uppercase tracking-wider">Catatan</th>
+                <th scope="col" className="px-4 py-3 text-left text-xs font-bold text-white uppercase tracking-wider">AKSI</th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {paginatedScores.map((score, index) => (
-                <tr key={index}>
+                <tr key={`${score['Student ID']}-${score['Item Name']}-${score.Date}-${index}`}>
                   <td className="px-4 py-4 text-sm text-gray-900 break-words">{(currentPage - 1) * itemsPerPage + index + 1}</td>
                   <td className="px-4 py-4 text-sm text-gray-900 font-medium break-words">{studentMap.get(score['Student ID']) || score['Student ID']}</td>
                   <td className="px-4 py-4 text-sm text-gray-900 break-words">{score.Category}</td>
@@ -342,6 +656,24 @@ const TeacherPortal: React.FC<TeacherPortalProps> = ({ onBack, teacher }) => {
                   <td className="px-4 py-4 text-sm text-gray-900 font-semibold break-words">{score.Score}</td>
                   <td className="px-4 py-4 text-sm text-gray-500 break-words">{score.Date}</td>
                   <td className="px-4 py-4 text-sm text-gray-900 break-words">{score.Notes || '-'}</td>
+                  <td className="px-4 py-4 text-sm text-gray-900 break-words">
+                    <div className="flex space-x-2">
+                      <button
+                        onClick={() => handleEditClick(score)}
+                        className="text-blue-600 hover:text-blue-800 p-1 rounded hover:bg-blue-50"
+                        title="Edit"
+                      >
+                        <PencilIcon className="w-5 h-5" />
+                      </button>
+                      <button
+                        onClick={() => handleDeleteClick(score)}
+                        className="text-red-600 hover:text-red-800 p-1 rounded hover:bg-red-50"
+                        title="Hapus"
+                      >
+                        <TrashIcon className="w-5 h-5" />
+                      </button>
+                    </div>
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -485,6 +817,8 @@ const TeacherPortal: React.FC<TeacherPortalProps> = ({ onBack, teacher }) => {
         )}
         {mainTab === 'report' && renderReport()}
       </div>
+      {renderEditModal()}
+      {renderDeleteModal()}
     </div>
   );
 };
