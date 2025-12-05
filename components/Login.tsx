@@ -78,7 +78,7 @@ const Login: React.FC<LoginProps> = ({ portalType, onBack, onLoginSuccess }) => 
         {config.icon}
       </div>
       <h2 className="text-2xl md:text-3xl font-bold text-gray-800">{config.title}</h2>
-      <p className="text-gray-500 mb-8">TK IT Harvydsyah</p>
+      <p className="text-gray-500 mb-8">TK IT Harvysyah</p>
 
       <form onSubmit={handleLogin} className="space-y-6">
         <div className="relative">
