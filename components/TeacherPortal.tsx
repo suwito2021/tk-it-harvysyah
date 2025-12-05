@@ -441,8 +441,8 @@ const TeacherPortal: React.FC<TeacherPortalProps> = ({ onBack, teacher }) => {
                 <label className="block text-sm font-medium text-gray-700 mb-1">Siswa</label>
                 <select
                   value={selectedScore['Student ID']}
-                  onChange={(e) => setSelectedScore({...selectedScore, 'Student ID': e.target.value})}
-                  className="w-full border border-gray-300 rounded-lg shadow-sm py-2.5 px-3 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-sm md:text-base"
+                  disabled={true}
+                  className="w-full border border-gray-300 rounded-lg shadow-sm py-2.5 px-3 bg-gray-100 text-gray-500 text-sm md:text-base cursor-not-allowed"
                   required
                 >
                   {students.map((student) => (
@@ -470,8 +470,8 @@ const TeacherPortal: React.FC<TeacherPortalProps> = ({ onBack, teacher }) => {
                 <input
                   type="text"
                   value={selectedScore['Item Name']}
-                  onChange={(e) => setSelectedScore({...selectedScore, 'Item Name': e.target.value})}
-                  className="w-full border border-gray-300 rounded-lg shadow-sm py-2.5 px-3 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-sm md:text-base"
+                  disabled={true}
+                  className="w-full border border-gray-300 rounded-lg shadow-sm py-2.5 px-3 bg-gray-100 text-gray-500 text-sm md:text-base cursor-not-allowed"
                   required
                 />
               </div>
@@ -501,8 +501,8 @@ const TeacherPortal: React.FC<TeacherPortalProps> = ({ onBack, teacher }) => {
                 <input
                   type="date"
                   value={selectedScore.Date}
-                  onChange={(e) => setSelectedScore({...selectedScore, Date: e.target.value})}
-                  className="w-full border border-gray-300 rounded-lg shadow-sm py-2.5 px-3 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-sm md:text-base"
+                  disabled={true}
+                  className="w-full border border-gray-300 rounded-lg shadow-sm py-2.5 px-3 bg-gray-100 text-gray-500 text-sm md:text-base cursor-not-allowed"
                   required
                 />
               </div>
