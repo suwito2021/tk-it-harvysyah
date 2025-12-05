@@ -7,7 +7,6 @@ const TEACHER_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRbz8LU
 const STUDENT_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRbz8LUyBo51HkpA0O0_8srtlG-7RxWLvesNbnmC3shQB9qC6EbUzx3dvXp5lWnmk7BR3sGuERPWZbg/pub?gid=1983478163&single=true&output=csv';
 const HAFALAN_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRbz8LUyBo51HkpA0O0_8srtlG-7RxWLvesNbnmC3shQB9qC6EbUzx3dvXp5lWnmk7BR3sGuERPWZbg/pub?gid=452521597&single=true&output=csv';
 const PRINCIPAL_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRbz8LUyBo51HkpA0O0_8srtlG-7RxWLvesNbnmC3shQB9qC6EbUzx3dvXp5lWnmk7BR3sGuERPWZbg/pub?gid=1638530657&single=true&output=csv';
-const SCORE_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRbz8LUyBo51HkpA0O0_8srtlG-7RxWLvesNbnmC3shQB9qC6EbUzx3dvXp5lWnmk7BR3sGuERPWZbg/pub?gid=0&single=true&output=csv';
 
 /**
  * A simple CSV parser that handles quoted values containing commas.
