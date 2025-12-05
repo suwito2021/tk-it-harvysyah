@@ -38,9 +38,11 @@ const TeacherPortal: React.FC<TeacherPortalProps> = ({ onBack, teacher }) => {
   const [students, setStudents] = useState<Student[]>([]);
   const [scores, setScores] = useState<Score[]>([]);
   const [hafalanItems, setHafalanItems] = useState<Hafalan[]>([]);
+  const [reportData, setReportData] = useState<any[]>([]);
   const [isLoadingStudents, setIsLoadingStudents] = useState(true);
   const [isLoadingHafalan, setIsLoadingHafalan] = useState(true);
   const [isLoadingScores, setIsLoadingScores] = useState(false);
+  const [isLoadingReport, setIsLoadingReport] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitStatus, setSubmitStatus] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
@@ -120,9 +122,22 @@ const TeacherPortal: React.FC<TeacherPortalProps> = ({ onBack, teacher }) => {
 
   useEffect(() => {
     if (mainTab === 'report' && students.length > 0) {
+      const fetchReportData = async () => {
+        setIsLoadingReport(true);
+        setError(null);
+        try {
+          const report = await getSheetData<any>('Report');
+          setReportData(report);
+        } catch (err) {
+          setError('Gagal memuat data laporan.');
+        } finally {
+          setIsLoadingReport(false);
+        }
+      };
+      fetchReportData();
+
       const fetchScores = async () => {
         setIsLoadingScores(true);
-        setError(null);
         try {
           const scoreData = await getSheetData<Score>('score');
           const studentIds = new Set(students.map(s => s.NISN));
@@ -130,7 +145,7 @@ const TeacherPortal: React.FC<TeacherPortalProps> = ({ onBack, teacher }) => {
           setScores(teacherScores.sort((a, b) => new Date(b.Date).getTime() - new Date(a.Date).getTime()));
         } catch (err)
   {
-          setError('Gagal memuat data laporan.');
+          // Error already handled above
         } finally {
           setIsLoadingScores(false);
         }
@@ -600,13 +615,48 @@ const TeacherPortal: React.FC<TeacherPortalProps> = ({ onBack, teacher }) => {
   };
 
   const renderReport = () => {
-    if (isLoadingScores) return <p className="text-center text-gray-500 py-8">Memuat data laporan...</p>;
-    if (error && scores.length === 0) return <p className="text-center text-red-500 py-8">{error}</p>;
-    if (scores.length === 0) return <p className="text-center text-gray-500 py-8">Belum ada data penilaian untuk kelas ini.</p>;
+    if (isLoadingReport || isLoadingScores) return <p className="text-center text-gray-500 py-8">Memuat data laporan...</p>;
+    if (error && reportData.length === 0 && scores.length === 0) return <p className="text-center text-red-500 py-8">{error}</p>;
 
     const totalPages = Math.ceil(filteredScores.length / itemsPerPage);
     const paginatedScores = filteredScores.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
+    // Display Report sheet data
+    if (reportData.length > 0) {
+      const headers = Object.keys(reportData[0]);
+
+      return (
+        <div>
+          <h3 className="text-xl font-semibold text-gray-800 mb-4">Data Laporan</h3>
+          <div className="border rounded-lg overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-emerald-600">
+                <tr>
+                  {headers.map(header => (
+                    <th key={header} scope="col" className="px-4 py-3 text-left text-xs font-bold text-white uppercase tracking-wider">
+                      {header}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {reportData.map((row, index) => (
+                  <tr key={index}>
+                    {headers.map(header => (
+                      <td key={header} className="px-4 py-4 text-sm text-gray-900 break-words">
+                        {String(row[header] || '')}
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      );
+    }
+
+    // Fallback to original score-based report
     return (
       <div>
         <h3 className="text-xl font-semibold text-gray-800 mb-4">Laporan Penilaian Kelas {teacher.Class}</h3>

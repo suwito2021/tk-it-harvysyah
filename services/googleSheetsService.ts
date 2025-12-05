@@ -7,6 +7,7 @@ const TEACHER_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRbz8LU
 const STUDENT_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRbz8LUyBo51HkpA0O0_8srtlG-7RxWLvesNbnmC3shQB9qC6EbUzx3dvXp5lWnmk7BR3sGuERPWZbg/pub?gid=1983478163&single=true&output=csv';
 const HAFALAN_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRbz8LUyBo51HkpA0O0_8srtlG-7RxWLvesNbnmC3shQB9qC6EbUzx3dvXp5lWnmk7BR3sGuERPWZbg/pub?gid=452521597&single=true&output=csv';
 const PRINCIPAL_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRbz8LUyBo51HkpA0O0_8srtlG-7RxWLvesNbnmC3shQB9qC6EbUzx3dvXp5lWnmk7BR3sGuERPWZbg/pub?gid=1638530657&single=true&output=csv';
+const REPORT_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRbz8LUyBo51HkpA0O0_8srtlG-7RxWLvesNbnmC3shQB9qC6EbUzx3dvXp5lWnmk7BR3sGuERPWZbg/pub?gid=1032825805&single=true&output=csv';
 
 /**
  * A simple CSV parser that handles quoted values containing commas.
@@ -108,6 +109,13 @@ export const getSheetData = async <T,>(sheetName: string): Promise<T[]> => {
         const response = await fetch(PRINCIPAL_CSV_URL);
         if (!response.ok) {
             throw new Error(`Error fetching Principal CSV data: ${response.statusText}`);
+        }
+        const csvText = await response.text();
+        return parseCSV<T>(csvText);
+    } else if (sheetName === 'Report') {
+        const response = await fetch(REPORT_CSV_URL);
+        if (!response.ok) {
+            throw new Error(`Error fetching Report CSV data: ${response.statusText}`);
         }
         const csvText = await response.text();
         return parseCSV<T>(csvText);
