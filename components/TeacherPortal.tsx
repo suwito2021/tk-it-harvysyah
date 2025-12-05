@@ -57,6 +57,12 @@ const TeacherPortal: React.FC<TeacherPortalProps> = ({ onBack, teacher }) => {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
+  // Report specific states
+  const [reportStartDate, setReportStartDate] = useState<string>('');
+  const [reportEndDate, setReportEndDate] = useState<string>('');
+  const [reportCurrentPage, setReportCurrentPage] = useState(1);
+  const reportItemsPerPage = 20;
+
   // Modal states
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
@@ -189,9 +195,41 @@ const TeacherPortal: React.FC<TeacherPortalProps> = ({ onBack, teacher }) => {
     return filtered;
   }, [scores, selectedStudent, startDate, endDate]);
 
+  const filteredReportData = useMemo(() => {
+    let filtered = reportData;
+    if (reportStartDate) {
+      filtered = filtered.filter(item => {
+        // Try to find date fields and filter
+        const dateFields = ['Tanggal', 'Date', 'Waktu', 'Time'];
+        for (const field of dateFields) {
+          if (item[field] && item[field] >= reportStartDate) {
+            return true;
+          }
+        }
+        return false;
+      });
+    }
+    if (reportEndDate) {
+      filtered = filtered.filter(item => {
+        const dateFields = ['Tanggal', 'Date', 'Waktu', 'Time'];
+        for (const field of dateFields) {
+          if (item[field] && item[field] <= reportEndDate) {
+            return true;
+          }
+        }
+        return false;
+      });
+    }
+    return filtered;
+  }, [reportData, reportStartDate, reportEndDate]);
+
   useEffect(() => {
     setCurrentPage(1);
   }, [selectedStudent, startDate, endDate]);
+
+  useEffect(() => {
+    setReportCurrentPage(1);
+  }, [reportStartDate, reportEndDate]);
 
   const scoreCountsSurah = useMemo(() => {
     const counts = { BB: 0, MB: 0, BSH: 0, BSB: 0 };
@@ -621,36 +659,112 @@ const TeacherPortal: React.FC<TeacherPortalProps> = ({ onBack, teacher }) => {
     const totalPages = Math.ceil(filteredScores.length / itemsPerPage);
     const paginatedScores = filteredScores.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
-    // Display Report sheet data
+    // Display Report sheet data with filtering and pagination
     if (reportData.length > 0) {
       const headers = Object.keys(reportData[0]);
+      const totalReportPages = Math.ceil(filteredReportData.length / reportItemsPerPage);
+      const startReportIndex = (reportCurrentPage - 1) * reportItemsPerPage;
+      const endReportIndex = startReportIndex + reportItemsPerPage;
+      const paginatedReportData = filteredReportData.slice(startReportIndex, endReportIndex);
 
       return (
         <div>
-          <h3 className="text-xl font-semibold text-gray-800 mb-4">Data Laporan</h3>
-          <div className="border rounded-lg overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-emerald-600">
-                <tr>
-                  {headers.map(header => (
-                    <th key={header} scope="col" className="px-4 py-3 text-left text-xs font-bold text-white uppercase tracking-wider">
-                      {header}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {reportData.map((row, index) => (
-                  <tr key={index}>
+          <h3 className="text-xl font-semibold text-gray-800 mb-6">Laporan Data</h3>
+
+          {/* Filter Section */}
+          <div className="bg-white p-4 rounded-lg shadow mb-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Tanggal Mulai</label>
+                <input
+                  type="date"
+                  value={reportStartDate}
+                  onChange={(e) => setReportStartDate(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Tanggal Akhir</label>
+                <input
+                  type="date"
+                  value={reportEndDate}
+                  onChange={(e) => setReportEndDate(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                />
+              </div>
+              <div className="flex items-end">
+                <button
+                  onClick={() => {setReportStartDate(''); setReportEndDate('');}}
+                  className="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600"
+                >
+                  Reset Filter
+                </button>
+              </div>
+            </div>
+            <div className="mt-4 text-sm text-gray-600">
+              Menampilkan {filteredReportData.length} dari {reportData.length} data
+            </div>
+          </div>
+
+          {/* Data Table */}
+          <div className="bg-white rounded-lg shadow overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-emerald-600">
+                  <tr>
+                    <th scope="col" className="px-4 py-3 text-left text-xs font-bold text-white uppercase tracking-wider">No</th>
                     {headers.map(header => (
-                      <td key={header} className="px-4 py-4 text-sm text-gray-900 break-words">
-                        {String(row[header] || '')}
-                      </td>
+                      <th key={header} scope="col" className="px-4 py-3 text-left text-xs font-bold text-white uppercase tracking-wider">
+                        {header}
+                      </th>
                     ))}
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {paginatedReportData.length > 0 ? paginatedReportData.map((row, index) => (
+                    <tr key={index} className="hover:bg-gray-50">
+                      <td className="px-4 py-4 text-sm text-gray-900 font-medium">
+                        {(reportCurrentPage - 1) * reportItemsPerPage + index + 1}
+                      </td>
+                      {headers.map(header => (
+                        <td key={header} className="px-4 py-4 text-sm text-gray-900 break-words">
+                          {String(row[header] || '-')}
+                        </td>
+                      ))}
+                    </tr>
+                  )) : (
+                    <tr>
+                      <td colSpan={headers.length + 1} className="px-4 py-8 text-center text-gray-500">
+                        Tidak ada data yang sesuai dengan filter
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Pagination */}
+            {totalReportPages > 1 && (
+              <div className="flex justify-between items-center px-4 py-3 bg-gray-50 border-t">
+                <button
+                  onClick={() => setReportCurrentPage(prev => Math.max(prev - 1, 1))}
+                  disabled={reportCurrentPage === 1}
+                  className="px-3 py-1 text-sm bg-white border border-gray-300 rounded hover:bg-gray-50 disabled:bg-gray-100 disabled:text-gray-400"
+                >
+                  Previous
+                </button>
+                <span className="text-sm text-gray-700">
+                  Halaman {reportCurrentPage} dari {totalReportPages} ({filteredReportData.length} data)
+                </span>
+                <button
+                  onClick={() => setReportCurrentPage(prev => Math.min(prev + 1, totalReportPages))}
+                  disabled={reportCurrentPage === totalReportPages}
+                  className="px-3 py-1 text-sm bg-white border border-gray-300 rounded hover:bg-gray-50 disabled:bg-gray-100 disabled:text-gray-400"
+                >
+                  Next
+                </button>
+              </div>
+            )}
           </div>
         </div>
       );
