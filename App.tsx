@@ -1,12 +1,12 @@
 import React, { useState, useCallback } from 'react';
-import LandingPage from './components/LandingPage';
-import TeacherPortal from './components/TeacherPortal';
-import ParentPortal from './components/ParentPortal';
-import PrincipalPortal from './components/PrincipalPortal';
-import Login from './components/Login';
-import Sidebar from './components/Sidebar';
-import Header from './components/Header';
-import SchoolInfoModal from './components/SchoolInfoModal';
+import LandingPage from './components/LandingPage.tsx';
+import TeacherPortal from './components/TeacherPortal.tsx';
+import ParentPortal from './components/ParentPortal.tsx';
+import PrincipalPortal from './components/PrincipalPortal.tsx';
+import Login from './components/Login.tsx';
+import Sidebar from './components/Sidebar.tsx';
+import Header from './components/Header.tsx';
+import SchoolInfoModal from './components/SchoolInfoModal.tsx';
 import type { Teacher, Student, Principal } from './types';
 
 type Portal = 'landing' | 'teacher' | 'parent' | 'principal';
