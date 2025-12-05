@@ -2,7 +2,7 @@ import { Score } from '../types';
 import { defaultHafalanData } from '../data/hafalanDefaults';
 import hafalanData from '../data/hafalanSurahData.json';
 
-const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbx0TT0W3YmYFALB9hMBr8CkAe_jr7wtoCf0e_qYg3jxiwXB5mQCRBVe8EKpgeWBYu7J/exec';
+const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbyPqyRALVV6XqmMkBBY_efuAKkYUZwDgHFwNEhkcMFZWBwfrF6jO0yEtBJZJFjoDv_A/exec';
 const TEACHER_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRbz8LUyBo51HkpA0O0_8srtlG-7RxWLvesNbnmC3shQB9qC6EbUzx3dvXp5lWnmk7BR3sGuERPWZbg/pub?gid=735271315&single=true&output=csv';
 const STUDENT_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRbz8LUyBo51HkpA0O0_8srtlG-7RxWLvesNbnmC3shQB9qC6EbUzx3dvXp5lWnmk7BR3sGuERPWZbg/pub?gid=1983478163&single=true&output=csv';
 const HAFALAN_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRbz8LUyBo51HkpA0O0_8srtlG-7RxWLvesNbnmC3shQB9qC6EbUzx3dvXp5lWnmk7BR3sGuERPWZbg/pub?gid=452521597&single=true&output=csv';
@@ -63,6 +63,32 @@ const parseCSV = <T,>(csvText: string): T[] => {
 
 export const getSheetData = async <T,>(sheetName: string): Promise<T[]> => {
   try {
+    // Use web app for score data to get real-time data
+    if (sheetName === 'score') {
+      const response = await fetch(WEB_APP_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'text/plain;charset=utf-8',
+        },
+        body: JSON.stringify({
+          action: 'getData',
+          sheet: sheetName
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Error fetching ${sheetName} data: ${response.statusText}`);
+      }
+
+      const result = await response.json();
+      if (result.success) {
+        return result.data as T[];
+      } else {
+        throw new Error(result.message || `Error fetching ${sheetName} data`);
+      }
+    }
+
+    // Keep CSV for other sheets (Teacher, Student, etc.)
     if (sheetName === 'Teacher') {
         const response = await fetch(TEACHER_CSV_URL);
         if (!response.ok) {
@@ -86,15 +112,7 @@ export const getSheetData = async <T,>(sheetName: string): Promise<T[]> => {
         }
         const csvText = await response.text();
         return parseCSV<T>(csvText);
-    } else if (sheetName === 'score') {
-        const response = await fetch(SCORE_CSV_URL);
-        if (!response.ok) {
-            throw new Error(`Error fetching Score CSV data: ${response.statusText}`);
-        }
-        const csvText = await response.text();
-        return parseCSV<T>(csvText);
     }
-
 
     // Default logic for other sheets
     const response = await fetch(`${WEB_APP_URL}?action=getData&sheet=${sheetName}`);
