@@ -2,7 +2,10 @@ import { Score } from '../types';
 import { defaultHafalanData } from '../data/hafalanDefaults';
 import hafalanData from '../data/hafalanSurahData.json';
 
-const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbx0TT0W3YmYFALB9hMBr8CkAe_jr7wtoCf0e_qYg3jxiwXB5mQCRBVe8EKpgeWBYu7J/exec';
+const isDevelopment = typeof window !== 'undefined' && window.location.hostname === 'localhost';
+const WEB_APP_URL = isDevelopment
+  ? '/api/google-apps-script/exec'
+  : 'https://script.google.com/macros/s/AKfycbx0TT0W3YmYFALB9hMBr8CkAe_jr7wtoCf0e_qYg3jxiwXB5mQCRBVe8EKpgeWBYu7J/exec';
 const TEACHER_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRbz8LUyBo51HkpA0O0_8srtlG-7RxWLvesNbnmC3shQB9qC6EbUzx3dvXp5lWnmk7BR3sGuERPWZbg/pub?gid=735271315&single=true&output=csv';
 const STUDENT_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRbz8LUyBo51HkpA0O0_8srtlG-7RxWLvesNbnmC3shQB9qC6EbUzx3dvXp5lWnmk7BR3sGuERPWZbg/pub?gid=1983478163&single=true&output=csv';
 const HAFALAN_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRbz8LUyBo51HkpA0O0_8srtlG-7RxWLvesNbnmC3shQB9qC6EbUzx3dvXp5lWnmk7BR3sGuERPWZbg/pub?gid=452521597&single=true&output=csv';
