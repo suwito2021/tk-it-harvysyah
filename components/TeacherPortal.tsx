@@ -61,7 +61,7 @@ const TeacherPortal: React.FC<TeacherPortalProps> = ({ onBack, teacher }) => {
   const [reportStartDate, setReportStartDate] = useState<string>('');
   const [reportEndDate, setReportEndDate] = useState<string>('');
   const [reportCurrentPage, setReportCurrentPage] = useState(1);
-  const reportItemsPerPage = 20;
+  const reportItemsPerPage = 10;
 
   // Modal states
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
