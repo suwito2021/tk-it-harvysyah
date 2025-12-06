@@ -2,7 +2,11 @@ import { Score } from '../types';
 import { defaultHafalanData } from '../data/hafalanDefaults';
 import hafalanData from '../data/hafalanSurahData.json';
 
-const isDevelopment = typeof window !== 'undefined' && window.location.hostname === 'localhost';
+const isDevelopment = typeof window !== 'undefined' && (
+  window.location.hostname === 'localhost' ||
+  window.location.hostname === '127.0.0.1' ||
+  window.location.hostname.startsWith('192.168.')
+);
 const WEB_APP_URL = isDevelopment
   ? '/api/google-apps-script/exec'
   : 'https://script.google.com/macros/s/AKfycbw6cq7l43crolh9eL_ZtmwSKAwL9eXOS7hsfBQ8F2OZy-1ZsasZYEgWYR31rRxVfKiV/exec';
