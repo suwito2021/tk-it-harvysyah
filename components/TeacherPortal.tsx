@@ -924,13 +924,13 @@ const TeacherPortal: React.FC<TeacherPortalProps> = ({ onBack, teacher }) => {
           <div className="bg-white p-4 rounded-lg shadow mb-6">
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Filter Siswa</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Cari Siswa</label>
                 <select
                   value={selectedReportStudent}
                   onChange={(e) => setSelectedReportStudent(e.target.value)}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500"
                 >
-                  <option value="">Semua Siswa</option>
+                  <option value="">Pilih Siswa</option>
                   {students.map(student => (
                     <option key={student.NISN} value={student.NISN}>
                       {student.Name} ({student.NISN})
@@ -961,7 +961,7 @@ const TeacherPortal: React.FC<TeacherPortalProps> = ({ onBack, teacher }) => {
                   onClick={() => {setSelectedReportStudent(''); setReportStartDate(''); setReportEndDate('');}}
                   className="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600"
                 >
-                  Reset Filter
+                  Reset Pencarian
                 </button>
               </div>
             </div>
