@@ -472,6 +472,18 @@ const TeacherPortal: React.FC<TeacherPortalProps> = ({ onBack, teacher }) => {
     }
   };
 
+  const handleEditReportClick = (row: any, index: number) => {
+    // Placeholder for report edit functionality
+    alert(`Edit functionality untuk baris ${index + 1} akan diimplementasikan.\nData: ${JSON.stringify(row, null, 2)}`);
+  };
+
+  const handleDeleteReportClick = (row: any, index: number) => {
+    // Placeholder for report delete functionality
+    if (window.confirm(`Apakah Anda yakin ingin menghapus data pada baris ${index + 1}?`)) {
+      alert(`Delete functionality untuk baris ${index + 1} akan diimplementasikan.\nData: ${JSON.stringify(row, null, 2)}`);
+    }
+  };
+
   const renderEditModal = () => {
     if (!isEditModalOpen || !selectedScore) return null;
 
@@ -718,11 +730,12 @@ const TeacherPortal: React.FC<TeacherPortalProps> = ({ onBack, teacher }) => {
                         {header}
                       </th>
                     ))}
+                    <th scope="col" className="px-4 py-3 text-left text-xs font-bold text-white uppercase tracking-wider">AKSI</th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
                   {paginatedReportData.length > 0 ? paginatedReportData.map((row, index) => (
-                    <tr key={index} className="hover:bg-gray-50">
+                    <tr key={index} className="hover:bg-gray-50 transition-colors duration-150">
                       <td className="px-4 py-4 text-sm text-gray-900 font-medium">
                         {(reportCurrentPage - 1) * reportItemsPerPage + index + 1}
                       </td>
@@ -731,10 +744,28 @@ const TeacherPortal: React.FC<TeacherPortalProps> = ({ onBack, teacher }) => {
                           {String(row[header] || '-')}
                         </td>
                       ))}
+                      <td className="px-4 py-4 text-sm text-gray-900">
+                        <div className="flex items-center space-x-2">
+                          <button
+                            onClick={() => handleEditReportClick(row, index)}
+                            className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-600 hover:text-blue-700 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1"
+                            title="Edit"
+                          >
+                            <PencilIcon className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteReportClick(row, index)}
+                            className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-red-50 hover:bg-red-100 text-red-600 hover:text-red-700 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-1"
+                            title="Hapus"
+                          >
+                            <TrashIcon className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </td>
                     </tr>
                   )) : (
                     <tr>
-                      <td colSpan={headers.length + 1} className="px-4 py-8 text-center text-gray-500">
+                      <td colSpan={headers.length + 2} className="px-4 py-8 text-center text-gray-500">
                         Tidak ada data yang sesuai dengan filter
                       </td>
                     </tr>
