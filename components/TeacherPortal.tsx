@@ -144,7 +144,19 @@ const TeacherPortal: React.FC<TeacherPortalProps> = ({ onBack, teacher }) => {
         setError(null);
         try {
           const report = await getSheetData<any>('Report');
-          setReportData(report);
+          // Filter report data to only show students from teacher's class
+          const studentIds = new Set(students.map(s => s.NISN));
+          const filteredReport = report.filter((item: any) => {
+            // Check various possible student identifier fields
+            const studentFields = ['NISN', 'Student ID', 'ID Siswa', 'StudentID'];
+            for (const field of studentFields) {
+              if (item[field] && studentIds.has(item[field])) {
+                return true;
+              }
+            }
+            return false;
+          });
+          setReportData(filteredReport);
         } catch (err) {
           setError('Gagal memuat data laporan.');
         } finally {
