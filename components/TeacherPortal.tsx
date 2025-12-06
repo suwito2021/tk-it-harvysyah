@@ -60,6 +60,7 @@ const TeacherPortal: React.FC<TeacherPortalProps> = ({ onBack, teacher }) => {
   // Report specific states
   const [reportStartDate, setReportStartDate] = useState<string>('');
   const [reportEndDate, setReportEndDate] = useState<string>('');
+  const [selectedReportStudent, setSelectedReportStudent] = useState<string>('');
   const [reportCurrentPage, setReportCurrentPage] = useState(1);
   const reportItemsPerPage = 10;
 
@@ -230,8 +231,20 @@ const TeacherPortal: React.FC<TeacherPortalProps> = ({ onBack, teacher }) => {
         return false;
       });
     }
+    if (selectedReportStudent) {
+      filtered = filtered.filter(item => {
+        // Try to find student fields and filter
+        const studentFields = ['NISN', 'Student ID', 'Nama Siswa', 'Siswa', 'Student'];
+        for (const field of studentFields) {
+          if (item[field] && String(item[field]).includes(selectedReportStudent)) {
+            return true;
+          }
+        }
+        return false;
+      });
+    }
     return filtered;
-  }, [reportData, reportStartDate, reportEndDate]);
+  }, [reportData, reportStartDate, reportEndDate, selectedReportStudent]);
 
   useEffect(() => {
     setCurrentPage(1);
@@ -239,7 +252,7 @@ const TeacherPortal: React.FC<TeacherPortalProps> = ({ onBack, teacher }) => {
 
   useEffect(() => {
     setReportCurrentPage(1);
-  }, [reportStartDate, reportEndDate]);
+  }, [reportStartDate, reportEndDate, selectedReportStudent]);
 
   const scoreCountsSurah = useMemo(() => {
     const counts = { BB: 0, MB: 0, BSH: 0, BSB: 0 };
@@ -897,7 +910,22 @@ const TeacherPortal: React.FC<TeacherPortalProps> = ({ onBack, teacher }) => {
 
           {/* Filter Section */}
           <div className="bg-white p-4 rounded-lg shadow mb-6">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Filter Siswa</label>
+                <select
+                  value={selectedReportStudent}
+                  onChange={(e) => setSelectedReportStudent(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                >
+                  <option value="">Semua Siswa</option>
+                  {students.map(student => (
+                    <option key={student.NISN} value={student.NISN}>
+                      {student.Name} ({student.NISN})
+                    </option>
+                  ))}
+                </select>
+              </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Tanggal Mulai</label>
                 <input
@@ -918,7 +946,7 @@ const TeacherPortal: React.FC<TeacherPortalProps> = ({ onBack, teacher }) => {
               </div>
               <div className="flex items-end">
                 <button
-                  onClick={() => {setReportStartDate(''); setReportEndDate('');}}
+                  onClick={() => {setSelectedReportStudent(''); setReportStartDate(''); setReportEndDate('');}}
                   className="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600"
                 >
                   Reset Filter
