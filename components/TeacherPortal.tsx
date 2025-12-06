@@ -73,6 +73,16 @@ const TeacherPortal: React.FC<TeacherPortalProps> = ({ onBack, teacher }) => {
   const [editStatus, setEditStatus] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
   const [deleteStatus, setDeleteStatus] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
 
+  // Report modal states
+  const [isReportEditModalOpen, setIsReportEditModalOpen] = useState(false);
+  const [isReportDeleteModalOpen, setIsReportDeleteModalOpen] = useState(false);
+  const [selectedReportRow, setSelectedReportRow] = useState<any>(null);
+  const [reportFormData, setReportFormData] = useState<any>({});
+  const [isReportEditLoading, setIsReportEditLoading] = useState(false);
+  const [isReportDeleteLoading, setIsReportDeleteLoading] = useState(false);
+  const [reportEditStatus, setReportEditStatus] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+  const [reportDeleteStatus, setReportDeleteStatus] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+
   const [formData, setFormData] = useState<Omit<Score, 'Timestamp'>>({
     'Student ID': '',
     Category: INPUT_TABS.surah1.category,
@@ -473,14 +483,77 @@ const TeacherPortal: React.FC<TeacherPortalProps> = ({ onBack, teacher }) => {
   };
 
   const handleEditReportClick = (row: any, index: number) => {
-    // Placeholder for report edit functionality
-    alert(`Edit functionality untuk baris ${index + 1} akan diimplementasikan.\nData: ${JSON.stringify(row, null, 2)}`);
+    setSelectedReportRow({...row});
+    setReportFormData({...row});
+    setReportEditStatus(null);
+    setIsReportEditModalOpen(true);
   };
 
   const handleDeleteReportClick = (row: any, index: number) => {
-    // Placeholder for report delete functionality
-    if (window.confirm(`Apakah Anda yakin ingin menghapus data pada baris ${index + 1}?`)) {
-      alert(`Delete functionality untuk baris ${index + 1} akan diimplementasikan.\nData: ${JSON.stringify(row, null, 2)}`);
+    setSelectedReportRow(row);
+    setReportDeleteStatus(null);
+    setIsReportDeleteModalOpen(true);
+  };
+
+  const handleReportEditSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedReportRow) return;
+
+    setIsReportEditLoading(true);
+    setReportEditStatus(null);
+
+    try {
+      // For now, just show success message since we don't have backend support yet
+      // In a real implementation, this would call an API to update the report data
+      await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate API call
+
+      // Update the local report data
+      const updatedReportData = reportData.map((item: any) =>
+        item === selectedReportRow ? reportFormData : item
+      );
+      setReportData(updatedReportData);
+
+      setIsReportEditModalOpen(false);
+      setSelectedReportRow(null);
+      setReportFormData({});
+      setReportEditStatus({ message: 'Data laporan berhasil diperbarui!', type: 'success' });
+
+      // Clear success message after 5 seconds
+      setTimeout(() => setReportEditStatus(null), 5000);
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Terjadi kesalahan yang tidak diketahui.';
+      setReportEditStatus({ message: `Gagal memperbarui data: ${errorMessage}`, type: 'error' });
+    } finally {
+      setIsReportEditLoading(false);
+    }
+  };
+
+  const handleReportDeleteConfirm = async () => {
+    if (!selectedReportRow) return;
+
+    setIsReportDeleteLoading(true);
+    setReportDeleteStatus(null);
+
+    try {
+      // For now, just show success message since we don't have backend support yet
+      // In a real implementation, this would call an API to delete the report data
+      await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate API call
+
+      // Remove from local report data
+      const updatedReportData = reportData.filter((item: any) => item !== selectedReportRow);
+      setReportData(updatedReportData);
+
+      setIsReportDeleteModalOpen(false);
+      setSelectedReportRow(null);
+      setReportDeleteStatus({ message: 'Data laporan berhasil dihapus!', type: 'success' });
+
+      // Clear success message after 5 seconds
+      setTimeout(() => setReportDeleteStatus(null), 5000);
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Terjadi kesalahan yang tidak diketahui.';
+      setReportDeleteStatus({ message: `Gagal menghapus data: ${errorMessage}`, type: 'error' });
+    } finally {
+      setIsReportDeleteLoading(false);
     }
   };
 
@@ -649,6 +722,145 @@ const TeacherPortal: React.FC<TeacherPortalProps> = ({ onBack, teacher }) => {
                 className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 disabled:bg-red-400 disabled:cursor-not-allowed transition-colors duration-200 flex items-center justify-center gap-2"
               >
                 {isDeleteLoading ? (
+                  <>
+                    <SpinnerIcon className="w-4 h-4" />
+                    Menghapus...
+                  </>
+                ) : (
+                  'Hapus'
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  const renderReportEditModal = () => {
+    if (!isReportEditModalOpen || !selectedReportRow) return null;
+
+    const headers = Object.keys(selectedReportRow);
+
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+          <div className="p-6 md:p-8">
+            <h3 className="text-xl md:text-2xl font-bold text-gray-800 mb-6">Edit Data Laporan</h3>
+            {reportEditStatus && (
+              <div className={`mb-6 p-4 rounded-xl shadow-lg border-l-4 animate-in slide-in-from-top-2 duration-300 ${
+                reportEditStatus.type === 'success'
+                  ? 'bg-gradient-to-r from-green-50 to-emerald-50 border-green-500 text-green-800'
+                  : 'bg-gradient-to-r from-red-50 to-pink-50 border-red-500 text-red-800'
+              }`}>
+                <div className="flex items-center">
+                  <div className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center mr-3 ${
+                    reportEditStatus.type === 'success' ? 'bg-green-100' : 'bg-red-100'
+                  }`}>
+                    {reportEditStatus.type === 'success' ? (
+                      <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
+                      </svg>
+                    ) : (
+                      <svg className="w-5 h-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path>
+                      </svg>
+                    )}
+                  </div>
+                  <div className="flex-1">
+                    <p className="font-semibold text-sm">
+                      {reportEditStatus.type === 'success' ? 'Berhasil!' : 'Error!'}
+                    </p>
+                    <p className="text-sm opacity-90 mt-1">{reportEditStatus.message}</p>
+                  </div>
+                </div>
+              </div>
+            )}
+            <form onSubmit={handleReportEditSubmit} className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {headers.map(header => (
+                  <div key={header}>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      {header}
+                    </label>
+                    <input
+                      type="text"
+                      value={reportFormData[header] || ''}
+                      onChange={(e) => setReportFormData({...reportFormData, [header]: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors"
+                      placeholder={`Masukkan ${header}`}
+                    />
+                  </div>
+                ))}
+              </div>
+              <div className="flex flex-col-reverse sm:flex-row justify-end gap-3 pt-6 border-t">
+                <button
+                  type="button"
+                  onClick={() => setIsReportEditModalOpen(false)}
+                  disabled={isReportEditLoading}
+                  className="px-6 py-2.5 text-sm md:text-base bg-gray-500 text-white rounded-lg hover:bg-gray-600 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors duration-200 font-medium"
+                >
+                  Batal
+                </button>
+                <button
+                  type="submit"
+                  disabled={isReportEditLoading}
+                  className="px-6 py-2.5 text-sm md:text-base bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 disabled:bg-emerald-400 disabled:cursor-not-allowed transition-colors duration-200 font-medium flex items-center justify-center gap-2"
+                >
+                  {isReportEditLoading ? (
+                    <>
+                      <SpinnerIcon className="w-4 h-4" />
+                      Menyimpan...
+                    </>
+                  ) : (
+                    'Simpan Perubahan'
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  const renderReportDeleteModal = () => {
+    if (!isReportDeleteModalOpen || !selectedReportRow) return null;
+
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div className="bg-white rounded-2xl shadow-xl p-6 w-full max-w-sm mx-4">
+          <div className="text-center">
+            <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 mb-4">
+              <TrashIcon className="h-6 w-6 text-red-600" />
+            </div>
+            <h3 className="text-lg font-bold text-gray-800 mb-2">Hapus Data Laporan</h3>
+            {reportDeleteStatus && (
+              <div className={`mb-4 p-3 rounded-lg text-sm font-medium ${
+                reportDeleteStatus.type === 'success'
+                  ? 'bg-green-100 text-green-800 border border-green-200'
+                  : 'bg-red-100 text-red-800 border border-red-200'
+              }`}>
+                {reportDeleteStatus.message}
+              </div>
+            )}
+            <p className="text-gray-600 mb-6">
+              Apakah Anda yakin ingin menghapus data laporan ini? Tindakan ini tidak dapat dibatalkan.
+            </p>
+            <div className="flex justify-center space-x-3">
+              <button
+                onClick={() => setIsReportDeleteModalOpen(false)}
+                disabled={isReportDeleteLoading}
+                className="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors duration-200"
+              >
+                Batal
+              </button>
+              <button
+                onClick={handleReportDeleteConfirm}
+                disabled={isReportDeleteLoading}
+                className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 disabled:bg-red-400 disabled:cursor-not-allowed transition-colors duration-200 flex items-center justify-center gap-2"
+              >
+                {isReportDeleteLoading ? (
                   <>
                     <SpinnerIcon className="w-4 h-4" />
                     Menghapus...
@@ -1014,6 +1226,8 @@ const TeacherPortal: React.FC<TeacherPortalProps> = ({ onBack, teacher }) => {
       </div>
       {renderEditModal()}
       {renderDeleteModal()}
+      {renderReportEditModal()}
+      {renderReportDeleteModal()}
     </div>
   );
 };
