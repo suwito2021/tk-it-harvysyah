@@ -13,7 +13,7 @@ export default defineConfig(({ mode }) => {
           '/api/google-apps-script': {
             target: 'https://script.google.com',
             changeOrigin: true,
-            rewrite: (path) => path.replace(/^\/api\/google-apps-script/, '/macros/s/AKfycbx0TT0W3YmYFALB9hMBr8CkAe_jr7wtoCf0e_qYg3jxiwXB5mQCRBVe8EKpgeWBYu7J'),
+            rewrite: (path) => path.replace(/^\/api\/google-apps-script/, '/macros/s/AKfycbw6cq7l43crolh9eL_ZtmwSKAwL9eXOS7hsfBQ8F2OZy-1ZsasZYEgWYR31rRxVfKiV'),
             configure: (proxy, options) => {
               proxy.on('error', (err, req, res) => {
                 console.log('proxy error', err);
